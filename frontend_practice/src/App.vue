@@ -9,10 +9,10 @@ const authStore = useAuthStore()
 // 현재 라우트의 meta 정보에 따라 네비게이션 표시 여부 결정
 const showNavbar = computed(() => !route.meta.hideNavbar)
 
-const handleLogout = () => {
+const handleLogout = async () => {
   if (confirm('정말 로그아웃 하시겠습니까?')) {
-    authStore.logout() // AuthStore에 구현된 로그아웃 액션 호출
-    // 또는 location.href = '/login' 등 처리
+    await authStore.logout() 
+    // 로그아웃 후 리다이렉트는 store 내부 로직(router.push)에서 처리됨
   }
 }
 </script>
@@ -36,17 +36,37 @@ const handleLogout = () => {
         </router-link>
 
         <!-- Nav Links -->
-        <nav class="flex items-center gap-4">
+        <nav class="flex items-center gap-6">
           <router-link to="/" class="text-sm font-semibold text-text-muted hover:text-primary transition-colors">홈</router-link>
-          <a href="#" class="text-sm font-semibold text-text-muted hover:text-primary transition-colors">마이페이지</a>
           
-          <template v-if="!authStore.isAuthenticated">
-            <router-link to="/login" class="text-sm font-semibold text-primary hover:underline">로그인</router-link>
-          </template>
-          <template v-else>
-            <button @click="handleLogout" class="px-4 py-1.5 text-xs font-bold text-white bg-primary rounded-full hover:bg-opacity-90 shadow-sm transition-transform active:scale-95">
+          <!-- [로그인 상태일 때만 보이는 메뉴] -->
+          <template v-if="authStore.isAuthenticated">
+            <!-- 마이페이지: 아직 라우터에 없으면 to="/" 등으로 임시 설정 -->
+            <router-link to="/mypage" class="text-sm font-semibold text-text-muted hover:text-primary transition-colors">
+              마이페이지
+            </router-link>
+            
+            <button 
+              @click="handleLogout" 
+              class="px-4 py-1.5 text-xs font-bold text-white bg-primary rounded-full hover:bg-opacity-90 shadow-sm transition-transform active:scale-95"
+            >
               로그아웃
             </button>
+          </template>
+
+          <!-- [비로그인 상태일 때 보이는 메뉴] -->
+          <template v-else>
+            <div class="flex items-center gap-4">
+              <router-link to="/login" class="text-sm font-semibold text-text-muted hover:text-primary transition-colors">
+                로그인
+              </router-link>
+              <router-link 
+                to="/signup" 
+                class="px-4 py-1.5 text-xs font-bold text-white bg-primary rounded-full hover:bg-opacity-90 shadow-sm transition-transform active:scale-95"
+              >
+                회원가입
+              </router-link>
+            </div>
           </template>
         </nav>
       </div>

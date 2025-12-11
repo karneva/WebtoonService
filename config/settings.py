@@ -195,3 +195,10 @@ REST_AUTH = {
     # 👇 [핵심] 이 설정이 있어야 로그인 응답에 'user' 객체가 포함됩니다.
     'USER_DETAILS_IN_RESPONSE': True,
 }
+
+# 회원가입 설정(이메일 에러 방지) -> 추후 필요 시 변경 가능
+# 이메일 인증을 '필수'나 '선택'이 아닌 '없음(none)'으로 설정
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+# 이메일 필수 여부 (필요에 따라 설정)
+ACCOUNT_EMAIL_REQUIRED = False 
