@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import RandomWebtoonView, SurveySubmitView
 
 app_name = "toons"
 urlpatterns = [
@@ -10,4 +11,6 @@ urlpatterns = [
     # path('<str:platform>/', views.webtoon_platform_view, name='platform_list'),
     path('webtoons/<int:webtoon_id>/favorite/', views.toggle_favorite, name='toggle_favorite'),
     path('mypage/', views.my_page, name='my_page'),
+    path('survey_webtoons/random/', RandomWebtoonView.as_view(), name='survey_webtoon-random'),
+    path('survey/submit/', SurveySubmitView.as_view(), name='survey-submit'),
 ]

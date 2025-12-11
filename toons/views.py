@@ -136,3 +136,52 @@ def my_page(request):
     #     내가 단 댓글
     
     return render(request, 'toons/my_page.html', context)
+
+# ---------------------------------------------------------------------------------
+## 설문조사용 views 정리(start)
+# ---------------------------------------------------------------------------------
+
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from .models import Survey_Webtoon, SurveyLog
+from .serializers import SurveyWebtoonSerializer
+import random
+
+class RandomWebtoonView(APIView):
+    # 설문은 로그인 직후 진행되므로 인증 필요
+    permission_classes = [IsAuthenticated] 
+
+    def get(self, request):
+        count = int(request.GET.get('count', 10))
+        # 랜덤 정렬하여 요청된 개수만큼 반환
+        survey_webtoons = Survey_Webtoon.objects.order_by('?')[:count]
+        serializer = SurveyWebtoonSerializer(survey_webtoons, many=True)
+        return Response(serializer.data)
+
+class SurveySubmitView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        user = request.user
+        data = request.data
+        
+        SurveyLog.objects.create(
+            user=user,
+            preferred_genres=data.get('genres', []),
+            webtoon_ratings=data.get('ratings', {}),
+            main_platform=data.get('platform', '')
+        )
+        
+        user.birth_year = data.get('birth_year')
+        user.gender = data.get('gender')
+        user.is_survey_completed = True
+        user.save()
+        
+        return Response({"message": "완료", "is_survey_completed": True})
+    
+# ---------------------------------------------------------------------------------
+## 설문조사용 views 정리(end)
+# ---------------------------------------------------------------------------------

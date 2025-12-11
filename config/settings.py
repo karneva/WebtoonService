@@ -33,6 +33,13 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'corsheaders',  # 이게 있어야 함
     'rest_framework',
+    'rest_framework.authtoken', ## 수정1. 세션 인증대신 토큰 인증을 사용하기 위함
+    'dj_rest_auth', ## 수정1. dj-rest-auth 앱 추가
+    'django.contrib.sites',     # allauth 사용 시 필요
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'dj_rest_auth.registration',
     'accounts',
     'toons',
     'django.contrib.admin',
@@ -43,6 +50,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+SITE_ID = 1 # allauth 사용 시 필수 설정
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # 반드시 최상단 근처
     'django.middleware.security.SecurityMiddleware',
@@ -52,6 +61,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 👇 [필수 추가] 이 줄을 추가하세요!
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -162,7 +173,25 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',  # 1순위: 토큰 인증
+        # 'rest_framework.authentication.SessionAuthentication', # 2순위: 세션 (필요 없으면 주석 처리)
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:5173",
 ]
+
+REST_AUTH = {
+    'USER_DETAILS_SERIALIZER': 'accounts.serializers.CustomUserSerializer',
+    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
+    'TOKEN_SERIALIZER': 'dj_rest_auth.serializers.TokenSerializer',
+    # 👇 [핵심] 이 설정이 있어야 로그인 응답에 'user' 객체가 포함됩니다.
+    'USER_DETAILS_IN_RESPONSE': True,
+}

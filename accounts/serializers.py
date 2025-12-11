@@ -1,7 +1,18 @@
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from dj_rest_auth.serializers import UserDetailsSerializer
+# from .models import User
 
 User = get_user_model()
+
+
+class CustomUserSerializer(UserDetailsSerializer):
+    class Meta(UserDetailsSerializer.Meta):
+        model = User
+        fields = UserDetailsSerializer.Meta.fields + ('is_survey_completed', 'birth_year', 'gender')
+
+
 
 # 1. 기본 유저 정보 (조회용)
 class UserSerializer(serializers.ModelSerializer):

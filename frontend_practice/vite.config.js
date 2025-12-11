@@ -8,11 +8,21 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 export default defineConfig({
   plugins: [
     vue(),
-    //vueDevTools(),
+    // vueDevTools(),
   ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  // 👇 [핵심] 이 부분이 추가되어야 합니다!
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000', // Django 서버 주소
+        changeOrigin: true,
+        secure: false,
+      }
+    }
+  }
 })
