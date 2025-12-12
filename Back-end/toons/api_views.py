@@ -8,6 +8,8 @@ from .serializers import WebtoonSerializer
 import requests
 from django.core.paginator import Paginator
 import pandas as pd
+from django.conf import settings
+from pathlib import Path
 
 # PLATFORM_API = {
 #     'NAVER': 'https://korea-webtoon-api.onrender.com/webtoons?provider=NAVER&page={page}&perPage=100&sort=ASC',
@@ -93,10 +95,20 @@ def webtoon_list(request):
     page_num = int(request.GET.get('page', 1))
     per_page = int(request.GET.get('per_page', 100))  # 한 페이지에 100개씩
     
+    # ✅ OS/경로에 상관없이 CSV 파일 위치 지정 (BASE_DIR 기준)
+    csv_path = Path(settings.BASE_DIR) / "crawling" / "all_webtoons.csv"
+    
     # DB에 해당 플랫폼 웹툰이 없으면 동기화
     if not Webtoon.objects.filter(provider=provider).exists():
-        # from .views import import_webtoons_from_csv
-        import_webtoons_from_csv(".\\crawling\\all_webtoons.csv")
+        if not csv_path.exists():
+            # 파일이 없을 때 500 대신 좀 더 친절한 에러를 줄 수도 있음
+            return Response(
+                {"detail": f"CSV 파일을 찾을 수 없습니다: {csv_path}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # Path 객체를 문자열로 변환해서 전달 (함수 구현에 따라 str() 필요할 수 있음)
+        import_webtoons_from_csv(str(csv_path))
     
     webtoons = Webtoon.objects.filter(provider=provider).exclude(update_days='').order_by('-id')
     

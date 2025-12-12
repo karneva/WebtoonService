@@ -3,12 +3,32 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-# 1. 기본 유저 정보 (조회용)
+
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'gender']
-        read_only_fields = ['id']
+        fields = ('id', 'username', 'email', 'password', 'gender', 'onboarding_completed')
+    
+    def create(self, validated_data):
+        # 비밀번호 해싱을 위해 create_user 사용
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            gender=validated_data.get('gender', ''),
+            # onboarding_completed는 default=False이므로 생략 가능
+        )
+        return user
+
+
+# 1. 기본 유저 정보 (조회용)
+# class UserSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = User
+#         fields = ['id', 'username', 'email', 'gender']
+#         read_only_fields = ['id']
 
 
 # 2. 회원가입용
