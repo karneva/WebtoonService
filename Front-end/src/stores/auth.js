@@ -1,0 +1,102 @@
+// src/stores/auth.js
+import { defineStore } from 'pinia';
+import axios from '@/api/axios'; // 방금 만든 axios 인스턴스 import
+
+export const useAuthStore = defineStore('auth', {
+  state: () => ({
+    user: null,          // 유저 정보 (username, email 등)
+    isAuthenticated: false,
+    loading: false,
+    error: null,
+  }),
+
+  actions: {
+    // 1. 로그인
+    async login(username, password) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await axios.post('/login/', {
+          username,
+          password,
+        });
+
+        // 토큰 저장 (Access, Refresh)
+        const { access, refresh } = response.data;
+        localStorage.setItem('accessToken', access);
+        localStorage.setItem('refreshToken', refresh);
+
+        this.isAuthenticated = true;
+        
+        // 로그인 성공 후 내 정보 가져오기
+        await this.fetchUser();
+        return true; // 성공 반환
+      } catch (err) {
+        this.error = '로그인 실패: 아이디나 비밀번호를 확인하세요.';
+        console.error(err);
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // 2. 내 정보 가져오기 (새로고침 시 상태 복구용)
+    async fetchUser() {
+      try {
+        const response = await axios.get('/me/');
+        this.user = response.data;
+        this.isAuthenticated = true;
+      } catch (err) {
+        this.user = null;
+        this.isAuthenticated = false;
+        // 토큰이 유효하지 않으면 로그아웃 처리
+        this.logout(); 
+      }
+    },
+
+    // 3. 회원가입
+    async register(userData) {
+      this.loading = true;
+      this.error = null;
+      try {
+        // userData는 { username, password, email, gender ... }
+        await axios.post('/signup/', userData);
+        return true;
+      } catch (err) {
+        // 서버에서 오는 에러 메시지 처리 (예: 이미 존재하는 아이디)
+        this.error = err.response?.data || '회원가입 실패';
+        console.error(err);
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // 4. 로그아웃
+    async logout() {
+      try {
+        const refresh = localStorage.getItem('refreshToken');
+        if (refresh) {
+          // 서버 블랙리스트에 추가 (선택 사항이지만 보안상 권장)
+          await axios.post('/logout/', { refresh });
+        }
+      } catch (err) {
+        console.warn('로그아웃 처리 중 에러 무시', err);
+      } finally {
+        // 클라이언트 상태 초기화
+        this.user = null;
+        this.isAuthenticated = false;
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+      }
+    },
+    
+    // 5. 앱 시작 시 토큰 체크 (App.vue에서 호출)
+    initializeAuth() {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        this.fetchUser();
+      }
+    }
+  },
+});
