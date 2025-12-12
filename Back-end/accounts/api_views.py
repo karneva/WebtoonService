@@ -2,68 +2,30 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from django.contrib.auth import authenticate, login, logout
-from .serializers import UserSerializer, SignUpSerializer, LoginSerializer
-# 임시로 csrf 검증 비활성
-from django.views.decorators.csrf import csrf_exempt
+from .serializers import UserSerializer
 
-
+# [내 정보 조회]
+# JWT 토큰이 헤더에 있으면 request.user가 자동으로 식별됩니다.
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-@csrf_exempt   
 def me_view(request):
     """내 정보 조회"""
     serializer = UserSerializer(request.user)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+# [회원가입]
+# login() 함수를 제거하고 순수하게 DB 생성만 담당합니다.
 @api_view(['POST'])
 @permission_classes([AllowAny])
-@csrf_exempt   
 def signup_view(request):
     """회원가입"""
-    serializer = SignUpSerializer(data=request.data)
+    # 앞서 만든 UserSerializer를 재사용합니다.
+    serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
-        login(request, user)  # 가입 후 자동 로그인
+        # [중요] JWT에서는 여기서 login(request, user)를 하지 않습니다.
         return Response({
             'message': '회원가입 성공',
             'user': UserSerializer(user).data
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-@csrf_exempt   
-def login_view(request):
-    """로그인"""
-    serializer = LoginSerializer(data=request.data)
-    if serializer.is_valid():
-        username = serializer.validated_data['username']
-        password = serializer.validated_data['password']
-        user = authenticate(request, username=username, password=password)
-        
-        if user:
-            login(request, user)
-            return Response({
-                'message': '로그인 성공',
-                'user': UserSerializer(user).data
-            }, status=status.HTTP_200_OK)
-        
-        return Response({
-            'error': '아이디 또는 비밀번호가 올바르지 않습니다.'
-        }, status=status.HTTP_401_UNAUTHORIZED)
-    
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-@csrf_exempt   
-def logout_view(request):
-    """로그아웃"""
-    logout(request)
-    return Response({
-        'message': '로그아웃 성공'
-    }, status=status.HTTP_200_OK)

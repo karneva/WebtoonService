@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'corsheaders',  # 이게 있어야 함
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist', # [추가] 로그아웃(토큰 블랙리스트) 기능을 위해 필수
     'accounts',
     'toons',
     'django.contrib.admin',
@@ -136,6 +137,7 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 # REST Framework 설정
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication', # [추가] JWT 인증 우선
         # 세션을 통한 인증 (Django 기본)
         'rest_framework.authentication.SessionAuthentication', 
     ],
@@ -143,6 +145,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ]
+}
+
+# Simple JWT 설정
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # 액세스 토큰 유효기간
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),     # 리프레시 토큰 유효기간
+    'ROTATE_REFRESH_TOKENS': True,                   # 토큰 갱신 시 리프레시 토큰도 재발급 (보안 강화)
+    'BLACKLIST_AFTER_ROTATION': True,                # 이전 리프레시 토큰 블랙리스트 처리 (로그아웃 구현용)
 }
 
 # CORS_ALLOW_ALL_ORIGINS = True
